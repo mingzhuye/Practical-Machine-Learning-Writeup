@@ -1,0 +1,157 @@
+---
+title: "Practical Machine Learning Prediction Assignment: Writeup"
+output: html_document
+author: Mingzhu Ye
+---
+##Synopsis  
+
+A group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. The project uses data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants and performs barbell lifts correctly and incorrectly in 5 different ways(A, B, C, D, E). My goal is to predict the manner in which 6 participants did exercises and also apply my machine learning algorithm to the 20 test cases available in the test data above. 
+
+**Data Source**   
+Training data set are here:https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv  
+Testing data set are here:https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv  
+The data and all related information come from here:http://groupware.les.inf.puc-rio.br/har  
+
+##Data Processing  
+
+###Getting Data  
+
+```{r, cache=TRUE}
+download.file("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",destfile = "~/Desktop/practical machine learning/pml-training.csv")    
+download.file("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", destfile = "~/Desktop/practical machine learning/pml-testing.csv")  
+Train <- read.csv("~/Desktop/practical machine learning/pml-training.csv", na.strings = c("NA","#DIV/0!",""))
+Test <- read.csv("~/Desktop/practical machine learning/pml-testing.csv", na.strings = c("NA","#DIV/0!",""))
+```
+
+Get dimension info about 'Train' and 'Test':  
+
+```{r, cache=TRUE}
+ dim(Train)
+```
+
+```{r, cache=TRUE}
+ dim(Test)
+```
+
+As observed above, there are 19622 observations of 160 variables and lots of NAs in Train. Apparently, the Train and Test data sets should be cleaned before we start using our machine learning algorithm.  
+
+###Cleaning Data  
+
+First, exclude NA values from 'Train':  
+
+```{r, cache=TRUE, eval=TRUE}
+noNA_Train <- Train[, apply(Train, 2, function(x) !any(is.na(x)))] 
+dim(noNA_Train)
+```
+
+Second, exclude name info, date info from noNA_Train dataset:
+```{r, cache=TRUE}
+clean_Train <- noNA_Train[,-c(1:7)]
+dim(clean_Train)
+```
+
+Next, do same data processing with pml-test dataset:
+```{r, cache=TRUE}
+trainnames <- colnames(clean_Train)
+testnames <- colnames(clean_Train[, -53])
+clean_Test <- Test[, testnames]
+dim(clean_Test)
+```
+
+### Create Data Partition with the 'clean_Train'
+
+I Decide to use half of clean_Train dataset to be training part and the rest to be testing part.
+
+```{r, cache=TRUE, results='hide'}
+library(caret)
+inTrain <- createDataPartition(y=clean_Train$classe, p = 0.5, list = FALSE)
+mytraining <- clean_Train[inTrain, ]
+mytesting <- clean_Train[-inTrain,]
+```
+
+Get dimension info about 'mytraining' and 'mytesting'
+```{r, cache=TRUE}
+dim(mytraining)
+```
+
+```{r, cache=TRUE}
+dim(mytesting)
+```
+
+## Predictions with Different Machine Learning Algorithms  
+
+### Using Random Forest Algorithm for Prediction
+
+Random Forest is generated with the mytraining dataset and tested with mytesting dataset. By using 51 predictors for five classes using cross-validation at a 5-fold, the overall Statistics is Accuracy of 0.9914, 95% CI of (0.9894, 0.9932), Kappa of 0.9892.  
+```{r,cache=TRUE}
+library(caret)
+library(randomForest)
+set.seed(12345)
+fitControl <- trainControl(method = "cv", number = 5, allowParallel = T, verbose = T)
+rffitModel <- train(classe~., data = mytraining, method = "rf", trControl = fitControl, verbose = F)
+```
+
+```{r, cache=TRUE}
+print(rffitModel)
+```
+
+Test the rffitModel with mytesting dataset:
+```{r, cache=TRUE}
+predictrf <- predict(rffitModel, newdata = mytesting)
+table(predictrf, mytesting$classe)
+```
+
+To acquire Overall Statistics:
+```{r, cache=TRUE}
+confusionMatrix(predictrf, mytesting$classe)
+```
+
+Predictions for the 20 Test Cases:
+```{r, cache=TRUE}
+predict_clean_Test <- predict(rffitModel, newdata = clean_Test) 
+predict_clean_Test
+```
+
+### Using Boosting Algorithm for Prediction  
+
+A Boosting Prediction is run to compare with the Random Forest Prediction. The Accury for Boosting prediction is 0.9616, 95% CI is (0.9576, 0.9653),  Kappa is 0.9514. They are less accurate than the Random Forest Prediction.   
+```{r, cache=TRUE}
+library(gbm)
+gbmfitModel<-train(classe~., data=mytraining, method="gbm", trControl=fitControl, verbose=F)
+```
+
+```{r, cache=TRUE}
+print(gbmfitModel)
+```
+
+Test the gbmfitModel with mytesting dataset:  
+```{r, cache=TRUE}
+predictgbm <- predict(gbmfitModel, newdata = mytesting)
+table(predictgbm, mytesting$classe)
+```
+
+To acquire overall Statistics:
+```{r, cache=TRUE}
+confusionMatrix(predictgbm, mytesting$classe)
+```
+
+##Conclusion
+
+Accuracy with Random Forest Algorithm is 0.9914 higher than that of Boosting Algorithm 0.9616. So I will use the Random Forest Algorithm as prediction for the 20 test cases.   
+
+##Successfull Submission to 20 Tests  
+
+Once, the predictions were obtained for the 20 test cases provided, the below shown script was used to obtain single text files to be uploaded to the courses web site to comply with the submission assigment. 
+
+```{r, cache=TRUE}
+getwd()
+pml_write_files = function(x){
+        n = length(x)
+        for(i in 1:n){
+                filename = paste0("problem_id_",i,".txt")
+                write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+        }
+}
+pml_write_files(predict_clean_Test)
+```
+
