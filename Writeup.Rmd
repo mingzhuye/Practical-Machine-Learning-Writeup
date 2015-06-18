@@ -5,14 +5,19 @@ author: Mingzhu Ye
 ---
 ##Synopsis  
 
-A group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. The project uses data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants and performs barbell lifts correctly and incorrectly in 5 different ways(A, B, C, D, E). My goal is to predict the manner in which 6 participants did exercises and also apply my machine learning algorithm to the 20 test cases available in the test data above. 
+A group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. The project uses data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants and performs barbell lifts correctly and incorrectly in 5 different ways(A, B, C, D, E). My goal is to predict the manner in which 6 participants did exercises and also apply my machine learning algorithm to the 20 test cases available in the test data above.   
 
-**Data Source**   
-Training data set are here:https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv  
-Testing data set are here:https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv  
-The data and all related information come from here:http://groupware.les.inf.puc-rio.br/har  
+Random Forest is generated with the mytraining dataset and tested with mytesting dataset. By using 51 predictors for five classes using cross-validation at a 5-fold, the overall Statistics is Accuracy of 0.9914, 95% CI of (0.9894, 0.9932), Kappa of 0.9892. A Boosting Prediction is run to compare with the Random Forest Prediction. The Accury for Boosting prediction is 0.9616, 95% CI is (0.9576, 0.9653),  Kappa is 0.9514. The Random Forest yieds better results, so we will use the Random Forest Algorithm as prediction for the 20 test cases.   
 
 ##Data Processing  
+
+###Data Source  
+
+Download [pml-Training dataset](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)   
+Download [pml-Testing dataset](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv)    
+Check more information about this project [here](http://groupware.les.inf.puc-rio.br/har)  
+**Citation:**   
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.  
 
 ###Getting Data  
 
@@ -83,7 +88,7 @@ dim(mytesting)
 ### Using Random Forest Algorithm for Prediction
 
 Random Forest is generated with the mytraining dataset and tested with mytesting dataset. By using 51 predictors for five classes using cross-validation at a 5-fold, the overall Statistics is Accuracy of 0.9914, 95% CI of (0.9894, 0.9932), Kappa of 0.9892.  
-```{r,cache=TRUE}
+```{r,cache=TRUE, results='hide'}
 library(caret)
 library(randomForest)
 set.seed(12345)
@@ -115,7 +120,7 @@ predict_clean_Test
 ### Using Boosting Algorithm for Prediction  
 
 A Boosting Prediction is run to compare with the Random Forest Prediction. The Accury for Boosting prediction is 0.9616, 95% CI is (0.9576, 0.9653),  Kappa is 0.9514. They are less accurate than the Random Forest Prediction.   
-```{r, cache=TRUE}
+```{r, cache=TRUE, results='hide'}
 library(gbm)
 gbmfitModel<-train(classe~., data=mytraining, method="gbm", trControl=fitControl, verbose=F)
 ```
@@ -139,7 +144,7 @@ confusionMatrix(predictgbm, mytesting$classe)
 
 Accuracy with Random Forest Algorithm is 0.9914 higher than that of Boosting Algorithm 0.9616. So I will use the Random Forest Algorithm as prediction for the 20 test cases.   
 
-##Successfull Submission to 20 Tests  
+##Successful Submission to 20 Test Cases  
 
 Once, the predictions were obtained for the 20 test cases provided, the below shown script was used to obtain single text files to be uploaded to the courses web site to comply with the submission assigment. 
 
